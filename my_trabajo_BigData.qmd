@@ -1,0 +1,516 @@
+---
+title: "Algunos datos sobre España"
+description: |
+  Análisis de algunas variables macroeconómicas de España
+author:
+  - name: Juan Carlos Perez Hernando
+    affiliation: Universitat de València
+    affiliation-url: https://www.uv.es
+date: 2026-01-03                           #--
+categories: [trabajo BigData, analisis]   #--
+image: "./imagenes/escudo.png"
+title-block-banner: true #- {true, false, "green","#AA0000"}
+title-block-banner-color: "white"    #-"#FFFFFF" 
+toc-depth: 3
+smooth-scroll: true
+format: 
+  html:
+    link-external-newwindow: true
+code-tools: true
+code-link: true
+---
+
+
+## Introduccion
+
+El presente trabajo tiene como propósito analizar de manera integral los pilares que configuran la realidad macroeconómica de España en un contexto actual. Para ello, se examinan las variables fundamentales que determinan tanto la capacidad productiva del país como el bienestar de sus ciudadanos, permitiendo identificar las tendencias de crecimiento y los desafíos estructurales a los que se enfrenta la nación.
+
+Para garantizar la precisión y el rigor técnico del análisis, este estudio se fundamenta en la explotación de las bases de datos del Instituto Nacional de Estadística (INE). A través de la interpretación de indicadores oficiales.
+
+No obstante, para hacer posible todo el manejo y tratado de datos es preciso disponer de algunas de las siguientes librerias en el programa Rstudio.
+
+```{r}
+library(quantmod)     #install.packages("quantmod")
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(leaflet)      #install.packages("leaflet")
+library(eurostat)
+library(rio)
+library(pxR)  
+library(mapSpain)
+library(sf)
+library(scico)
+library(plotly)
+library(reactable)     #install.packages("scico")
+library(ggthemes)
+library(gganimate)  
+library(janitor)
+```
+
+
+---
+
+## Ubicación de la peninsula y sus provincias
+
+España se sitúa en el extremo suroeste de Europa, ocupando la mayor parte de la Península Ibérica. Su ubicación estratégica la convierte en un puente natural entre dos continentes (Europa y África) y dos masas de agua fundamentales para el comercio global: el Océano Atlántico y el Mar Mediterráneo. Esta posición geográfica ha sido, históricamente, uno de los factores determinantes de su apertura exterior y su especialización económica en sectores como la logística y el turismo.
+
+Desde el punto de vista económico, la distribución territorial es clave para entender las disparidades en el PIB y el empleo que se analizan en este trabajo. El Estado se organiza en 17 Comunidades Autónomas y 2 Ciudades Autónomas (Ceuta y Melilla), que a su vez se integran en un total de 50 provincias.
+
+```{r}
+datos_provincias <- data.frame(
+  nombre = c(
+    "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz", "Barcelona", "Burgos", "Cáceres",
+    "Cádiz", "Cantabria", "Castellón", "Ciudad Real", "Córdoba", "A Coruña", "Cuenca", "Girona", "Granada", "Guadalajara",
+    "Guipúzcoa", "Huelva", "Huesca", "Islas Baleares", "Jaén", "León", "Lleida", "Lugo", "Madrid", "Málaga",
+    "Murcia", "Navarra", "Ourense", "Palencia", "Las Palmas", "Pontevedra", "La Rioja", "Salamanca", "Segovia", "Sevilla",
+    "Soria", "Tarragona", "Santa Cruz de Tenerife", "Teruel", "Toledo", "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza", "Ceuta", "Melilla"
+  ),
+  lat = c(
+    42.8467, 38.9944, 38.3452, 36.8340, 43.3603, 40.6567, 38.8794, 41.3851, 42.3440, 39.4765,
+    36.5271, 43.4623, 39.9864, 38.9848, 37.8882, 43.3623, 40.0704, 41.9794, 37.1773, 40.6286,
+    43.3128, 37.2614, 42.1362, 39.5693, 37.7796, 42.5987, 41.6176, 43.0121, 40.4168, 36.7213,
+    37.9922, 42.8125, 42.3358, 42.0095, 28.1235, 42.4310, 42.4627, 40.9688, 40.9429, 37.3891,
+    41.7640, 41.1189, 28.4636, 40.3457, 39.8628, 39.4699, 41.6523, 43.2630, 41.5033, 41.6488, 35.8894, 35.2923
+  ),
+  lng = c(
+    -2.6730, -1.8585, -0.4810, -2.4637, -5.8448, -4.7004, -6.9706, 2.1734, -3.6969, -6.3722,
+    -6.2886, -3.8099, -0.0513, -3.9274, -4.7794, -8.4115, -2.1374, 2.8214, -3.5986, -3.1619,
+    -1.9812, -6.9447, -0.4085, 2.6502, -3.7849, -5.5671, 0.6206, -7.5581, -3.7038, -4.4214,
+    -1.1307, -1.6458, -7.8639, -4.5283, -15.4363, -8.6444, -2.4450, -5.6635, -4.1080, -5.9845,
+    -2.4688, 1.2445, -16.2518, -1.1065, -4.0273, -0.3774, -4.7284, -2.9350, -5.7463, -0.8891, -5.3198, -2.9381
+  )
+)
+
+# 2. Creamos el mapa usando esos datos
+posicion_espana <- leaflet(data = datos_provincias) %>%
+  addTiles() %>%
+  setView(lng = -3.7038, lat = 40.4168, zoom = 6) %>%
+  addMarkers(
+    lng = ~lng,
+    lat = ~lat,
+    popup = ~nombre,
+    label = ~nombre
+  )
+
+# 3. Mostrar el resultado
+posicion_espana
+```
+
+
+---
+
+Podemos observar en esta imagen el relieve
+
+::: {.column-margin}
+
+![](./imagenes/relieve.jfif){fig-align="center"}
+
+:::
+
+---
+
+## 1. Dinámica demográfica
+
+
+El factor humano es la base de cualquier sistema productivo. Según los últimos datos de la Estadística Continua de Población del INE, España ha consolidado un cambio de tendencia demográfico que impacta directamente en las variables de empleo y consumo.
+
+Para entender la economía española actual, es necesario desglosar este indicador en dos puntos críticos:
+
+---
+
+### 1.1. Interpretacion de la estructura por edades
+
+El estudio de la estructura demográfica es fundamental para entender la sostenibilidad económica de España. Al observar la Pirámide Poblacional (INE), se hace evidente que el país atraviesa un proceso de maduración demográfica caracterizado por una forma de "bulbo" o "paraguas", donde la mayor parte de la población se concentra en cohortes de edad avanzada.
+
+A partir de los datos visualizados, podemos extraer tres conclusiones económicas críticas:
+
+- El estrechamiento en los tramos de 0 a 20 años refleja una baja tasa de natalidad persistente. A largo plazo, esto se traduce en una menor entrada de jóvenes al mercado laboral, lo que limita el crecimiento potencial del PIB.
+
+- El mayor número de habitantes se encuentra actualmente en la franja de los 45 a 60 años. Este grupo representa el grueso de la fuerza laboral actual y la mayor capacidad de consumo, pero se encamina rápidamente hacia la jubilación.
+
+- La notable presencia de población por encima de los 80 años confirma la alta esperanza de vida en España. Desde una perspectiva de finanzas públicas, esto implica un aumento sostenido del gasto en protección social, sanidad y dependencia.
+
+```{r}
+#POBLACION
+df <- rio::import("./datos/poblacion_residente.csv")
+
+poblacion_anual <- df %>%
+  filter(!is.na(Total)) %>%
+  mutate(fecha = dmy(Periodo),
+         anio = year(fecha),
+         mes = month(fecha)) %>%
+  filter(mes == 1) %>%
+  select(anio, `Edad simple`, Sexo, Total) %>%
+  arrange(desc(anio))
+
+df_piramide <- poblacion_anual %>%
+  filter(anio == 2025) %>%
+  mutate(Total = as.numeric(gsub("\\.", "", Total)))
+
+df_piramide_final <- df_piramide %>%
+  filter(!grepl("Total|Todas|y más", `Edad simple`)) %>% 
+  mutate(Edad_num = as.numeric(gsub("[^0-9]", "", `Edad simple`))) %>%
+  filter(!is.na(Edad_num))
+
+# Ahora el gráfico usará 'df_piramide_final'
+p1 <- ggplot(df_piramide_final, aes(x = reorder(`Edad simple`, Edad_num), y = Total, fill = Sexo)) +
+  geom_col(data = filter(df_piramide_final, Sexo == "Hombres") %>% mutate(Total = -Total)) +
+  geom_col(data = filter(df_piramide_final, Sexo == "Mujeres")) +
+  coord_flip() +
+  scale_y_continuous(labels = abs) +
+  scale_fill_manual(values = c("Hombres" = "#4682B4", "Mujeres" = "#E06666")) +
+  scale_x_discrete(breaks = function(x) x[seq(1, length(x), by = 10)]) + 
+  labs(title = "Pirámide Poblacional 2024",
+       subtitle = "Solo edades simples | Fuente: INEBase",
+       y = "Habitantes", x = "Edad") +
+  theme_minimal()
+
+print(p1)
+```
+
+---
+
+### 1.2. Distribucion espacial: desequilibrio entre provincias
+
+El análisis del mapa de habitantes por provincias, basado en las proyecciones para octubre de 2025 del INE, revela una España profundamente polarizada en términos de asentamiento humano. Esta distribución no es solo una cuestión demográfica, sino que define la capacidad de consumo y la oferta laboral de cada región.
+
+El mapa permite visualizar una tendencia histórica que se mantiene vigente en 2025: la población tiende a concentrarse en la periferia costera. Provincias como Valencia, Alicante, Málaga y Sevilla aparecen con una tonalidad más clara (naranja), indicando poblaciones que oscilan entre los 2 y 4 millones de habitantes. Estas zonas son las que presentan un mercado de trabajo más dinámico vinculado al sector servicios y al turismo.
+
+En contraste, la gran mayoría del territorio nacional aparece en color rojo intenso, lo que indica una población inferior a los 2 millones de habitantes por provincia. Este fenómeno, conocido como la "España vaciada", implica una menor escala de mercado, lo que dificulta la atracción de inversiones y condiciona el crecimiento del PIB regional.
+
+```{r}
+df <- rio::import("./datos/poblacion_provincias.csv")
+
+datos_filtrados <- df %>%
+  filter(
+    Sexo == "Total",
+    `Edad simple` == "Todas las edades",
+    Provincias != "Total Nacional",
+    str_detect(Periodo, "1 de octubre de 2025")
+  )
+
+
+datos_listos <- datos_filtrados %>%
+  mutate(
+    Total = as.numeric(str_replace_all(Total, "\\.", "")),
+    cod_prov = str_extract(Provincias, "^[0-9]{2}")
+  )
+
+
+provincias_mapa <- esp_get_prov()
+
+
+mapa_final <- provincias_mapa %>%
+  left_join(datos_listos, by = c("cpro" = "cod_prov"))
+
+
+ggplot(mapa_final) +
+  geom_sf(aes(fill = Total), color = "white", size = 0.2) +
+  scale_fill_distiller(palette = "YlOrRd",
+                       labels = scales::label_number(big.mark = ".", decimal.mark = ",")) +
+  theme_void() +
+  labs(
+    title = "Cantidad de habitantes por provincias",
+    subtitle = "Proyección para Octubre de 2025",
+    fill = "Habitantes"
+  )
+```
+
+---
+
+## 2. Estabilidad de Precios: El Impacto del IPC
+
+El Índice de Precios de Consumo (IPC) es el indicador que mide la evolución de los precios de los bienes y servicios consumidos por las familias. En el contexto de 2025-2026, el IPC actúa como el contrapeso del crecimiento económico: mientras el PIB sube, la inflación determina cuánto de ese dinero mantiene su valor de compra.
+
+---
+
+### 2.1. Variacion del indice de precios
+
+A partir de la gráfica de tasa de variación anual, identificamos tres hitos fundamentales:
+
+- Se observa una subida vertical sin precedentes en la serie, donde la inflación superó el 10%. Este fenómeno, impulsado por el coste de la energía y las materias primas, supuso un choque severo para el poder adquisitivo de los hogares.
+
+- La gráfica muestra momentos donde la tasa cayó por debajo de cero. Si bien esto puede parecer positivo, suele indicar estancamiento económico o caídas bruscas del consumo, como ocurrió durante la pandemia.
+
+- La curva muestra una tendencia a la estabilización, situándose en una franja cercana al 3%. Aunque es una cifra mucho más manejable que la de 2022, sigue estando por encima del objetivo ideal del BCE, manteniendo la presión sobre el coste de la cesta de la compra.
+
+```{r}
+df <- rio::import("./datos/ipc.csv")
+
+
+# 2. Preparamos los datos filtrando ambos a la vez para poder comparar
+df_dinamico <- df %>%
+  filter(`Grupos ECOICOP` %in% c("Índice general", 
+                                 "Índice general sin alimentos no elaborados ni productos energéticos"),
+         `Tipo de dato` == "Variación anual") %>%
+  mutate(
+    fecha = ym(Periodo),
+    Valor = as.numeric(str_replace(Total, ",", ".")),
+    Indicador = ifelse(str_detect(`Grupos ECOICOP`, "sin alimentos"), "Subyacente", "General")
+  ) %>%
+  arrange(fecha) %>%
+  drop_na(Valor)
+
+p <- ggplot(df_dinamico, aes(x = fecha, y = Valor, color = Indicador, group = Indicador)) +
+  geom_line(linewidth = 0.7) +
+  scale_color_manual(values = c("General" = "#E41A1C", "Subyacente" = "#377EB8")) +
+  labs(
+    title = "IPC en España (2000-2025)",
+    y = "Tasa Variación Anual (%)",
+    x = "Año"
+  ) +
+  theme_minimal()
+
+print(p)
+```
+
+---
+
+### 2.2. Tabla del indice de precios por producto: 2002-2024
+
+En la siguiente tabla podemos observar sector por sector el indice de precios para cada año desde 2002 hasta 2024.
+
+```{r}
+# 1. Preparación de datos y limpieza de nombres
+tabla_limpia <- df %>%
+  filter(!`Grupos ECOICOP` %in% c("Índice general", "Índice general sin alimentos no elaborados ni productos energéticos"),
+         `Tipo de dato` == "Variación anual") %>%
+  mutate(
+    fecha = ym(Periodo),
+    anio = year(fecha),
+    Valor = as.numeric(str_replace(Total, ",", ".")),
+    Producto = case_when(
+      str_detect(`Grupos ECOICOP`, "Alimentos") ~ "Alimentos",
+      str_detect(`Grupos ECOICOP`, "Bebidas alcohólicas") ~ "Alcohol y Tabaco",
+      str_detect(`Grupos ECOICOP`, "Vestido") ~ "Ropa",
+      str_detect(`Grupos ECOICOP`, "Vivienda") ~ "Vivienda/Energía",
+      str_detect(`Grupos ECOICOP`, "Mobiliario") ~ "Muebles/Hogar",
+      str_detect(`Grupos ECOICOP`, "Sanidad") ~ "Sanidad",
+      str_detect(`Grupos ECOICOP`, "Transporte") ~ "Transporte",
+      str_detect(`Grupos ECOICOP`, "Comunicaciones") ~ "Comunicaciones",
+      str_detect(`Grupos ECOICOP`, "Ocio") ~ "Ocio/Cultura",
+      str_detect(`Grupos ECOICOP`, "Enseñanza") ~ "Educación",
+      str_detect(`Grupos ECOICOP`, "Restaurantes") ~ "Hoteles/Rest.",
+      str_detect(`Grupos ECOICOP`, "Otros") ~ "Otros",
+      TRUE ~ `Grupos ECOICOP`
+    )
+  ) %>%
+  group_by(anio, Producto) %>%
+  summarise(Media = round(mean(Valor, na.rm = TRUE), 1), .groups = "drop") %>%
+  pivot_wider(names_from = Producto, values_from = Media) %>%
+  filter(anio >= 2000) %>%
+  arrange(desc(anio))
+
+# 2. Tabla con la sintaxis de estilo correcta
+reactable(
+  tabla_limpia,
+  searchable = TRUE,
+  striped = TRUE,
+  highlight = TRUE,
+  bordered = TRUE,
+  defaultPageSize = 15,
+  defaultColDef = colDef(
+    align = "left",
+    headerStyle = list(textAlign = "left", background = "#f7f7f7")
+  ),
+  columns = list(
+    anio = colDef(
+      name = "Año",
+      sticky = "left",
+      minWidth = 80,
+      style = list(fontWeight = "bold", background = "#f9f9f9") 
+    )
+  )
+)
+```
+
+---
+
+## 3. Mercado de Trabajo: Ocupación
+
+El empleo es el principal canal de transmisión de la riqueza hacia los hogares. Según los registros más recientes del INE, el mercado laboral español ha mostrado una resistencia histórica, alcanzando niveles de ocupación récord a pesar del contexto de incertidumbre global.
+
+---
+
+### 3.1. Evolución del Desempleo y la Participación
+
+El análisis del empleo en España no puede entenderse sin observar la relación entre las personas que desean trabajar y aquellas que efectivamente lo consiguen. Según la evolución histórica de la Encuesta de Población Activa (EPA), el mercado laboral español muestra actualmente una de sus etapas más estables tras superar crisis estructurales profundas.
+
+A partir del gráfico de Evolución Anual: Paro vs. Actividad, se extraen dos conclusiones fundamentales:
+
+- La línea superior (naranja) muestra que la disposición de la población a participar en el mercado laboral se mantiene en niveles máximos históricos, cercanos al 60%. Esto indica que, a pesar del envejecimiento poblacional, la base de trabajadores potenciales sigue siendo sólida.
+
+- La tasa de paro (línea turquesa) ha completado un ciclo de descenso prolongado desde el pico cercano al 27% en 2013, situándose al cierre de 2025 en niveles próximos al 10-11%. Es la cifra más baja en casi dos décadas, lo que sugiere una mayor absorción de mano de obra por parte del tejido productivo.
+
+Esta mejora en el mercado laboral es el factor que permite sostener el consumo interno. Sin embargo, el reto para 2026, visto en conjunto con el gráfico de Ramas de Actividad, es el desajuste entre la oferta y la demanda: el sector servicios sigue absorbiendo la mayoría del empleo, mientras que sectores de mayor valor añadido presentan dificultades para encontrar perfiles técnicos.
+
+```{r}
+ df2 <- rio::import("./datos/tasa_actividad.csv")
+
+df_paro <- df2 %>% 
+  clean_names()
+
+df_final <- df_paro %>% 
+  filter(tasas %in% c("Tasa de paro de la población", 
+                      "Tasa de actividad"))
+
+df_final <- df_final %>% 
+  filter(provincias == "Total Nacional", 
+         sexo == "Ambos sexos")
+
+
+df_grafico <- df_final %>%
+  mutate(
+    fecha = yq(periodo),
+    total = as.numeric(str_replace(total, ",", "."))
+  )
+
+ggplot(df_grafico, aes(x = fecha, y = total, color = tasas)) +
+  geom_line(linewidth = 1) +
+  scale_x_date(
+    date_breaks = "1 year", 
+    date_labels = "%Y"       
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Evolución Anual: Paro vs. Actividad",
+    x = "Año",
+    y = "Porcentaje (%)",
+    color = "Indicador"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
+```
+
+---
+
+### 3.2. Comparativa de Ocupación por Franjas de Edad para los diferentes años
+
+A pesar de la mejora general, la tasa de empleo varía significativamente según el grupo demográfico, reflejando las dificultades de inserción y el peso de la experiencia.
+
+- Población Adulta (25-54 años): Este grupo constituye el núcleo del mercado laboral, presentando las tasas de empleo más elevadas y estables.
+
+- Juventud (menores de 25 años): Aunque ha mejorado respecto a décadas pasadas, este colectivo sigue enfrentando una tasa de empleo significativamente menor, lo que correlaciona con el estrechamiento de la base en la pirámide poblacional analizada previamente.
+
+- Mayores de 55 años: Se observa un incremento en su participación laboral, alineado con el retraso en la edad de jubilación y la longevidad de la población.
+
+```{r}
+df3 <- rio::import("./datos/tasa_actividad_completo.csv")
+
+
+df_comparativo <- df3 %>%
+  clean_names() %>%
+  filter(periodo %in% c("2010T4", "2015T4","2020T4", "2024T4")) %>%
+  filter(sexo == "Ambos sexos", 
+         comunidades_y_ciudades_autonomas == "Total Nacional",
+         edad != "Total") %>%
+  mutate(total = as.numeric(str_replace(total, ",", ".")))
+
+p_facet <- ggplot(df_comparativo, aes(x = edad, y = total, fill = edad)) +
+  geom_col() +
+  facet_wrap(~periodo) + 
+  scale_fill_viridis_d(option = "viridis") +
+  theme_minimal() +
+  labs(title = "Comparativa Ocupados",
+       x = " ", y = "Tasa de Empleo (%)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+
+
+ggplotly(p_facet)   
+```
+
+---
+
+## 4. Desempeño macroeconomico: Evolucion y estructura del PIB
+
+El Producto Interior Bruto (PIB) constituye el indicador más relevante para medir la capacidad de generación de riqueza de la economía española. A partir de los datos procesados del INE, se observa que España ha mantenido una trayectoria de crecimiento resiliente, apoyada tanto en el dinamismo del sector servicios como en la recuperación paulatina de la inversión industrial.
+
+---
+
+### 4.1 Evolucion de los componentes del PIB
+
+A partir de la evolución de los agregados macroeconómicos representada en el gráfico, podemos destacar los siguientes puntos clave:
+
+- El bloque de mayor peso en la gráfica (color naranja) corresponde al Valor Añadido de los servicios y otros sectores terciarios. Esto confirma que España es una economía eminentemente de servicios, lo que la hace sensible a la demanda interna y al turismo.
+
+- Los sectores secundarios (color verde y morado) mantienen una presencia estable, aunque con un peso relativo menor tras el reajuste del modelo productivo posterior a 2008.
+
+- El componente rojo (impuestos netos sobre productos) muestra cómo la actividad comercial y el consumo final también contribuyen de forma significativa al volumen total del PIB.
+
+La gráfica muestra un repunte vertical tras la contracción de 2020, alcanzando picos históricos entre 2023 y 2024. Este crecimiento refleja la recuperación del dinamismo económico, aunque los datos preliminares de 2025 sugieren una estabilización hacia niveles de crecimiento más sostenibles, en línea con la moderación de la economía europea.
+
+```{r}
+df2 <- rio::import("./datos/pib_anual.csv")
+
+# 1. Preparación de los datos (Igual que antes)
+df_plot <- df2 %>%
+  mutate(Anio = substr(Periodo, 1, 4),
+         Total = as.numeric(gsub("\\.", "", Total))) %>%
+  filter(!grepl("Producto interior bruto", `Agregados macroeconómicos: Nivel 1`)) %>%
+  group_by(Anio, `Agregados macroeconómicos: Nivel 1`) %>%
+  summarise(Valor_Anual = sum(Total, na.rm = TRUE), .groups = 'drop')
+
+# 2. Gráfico con corrección de escala y parámetros
+ggplot(df_plot, aes(x = Anio, y = Valor_Anual, fill = `Agregados macroeconómicos: Nivel 1`)) +
+  geom_bar(stat = "identity", position = "stack", color = "white", linewidth = 0.2) +
+  scale_fill_brewer(palette = "Set1") + 
+  labs(title = "Evolución de los componentes del PIB por año",
+       subtitle = "Basado en agregados macroeconómicos de Nivel 1",
+       x = "Año",
+       y = "Millones de Euros",
+       fill = "Componente") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5),
+    legend.position = "bottom",
+    legend.text = element_text(size = 8)
+  )
+
+```
+
+---
+
+### 4.2. Estructura Sectorial: Distribución por Ramas de Actividad
+
+En el siguiente diagrama podemos ver de otra manera como se distribuyen los principales sectores y el peso que tienen sobre el PIB en España.
+
+
+```{r}
+df3 <- rio::import("./datos/actividad.csv")
+
+datos_filtrados <- df3 %>% 
+  filter(Periodo == "2024T4",
+         `Niveles y Tasas` == "Dato base",
+         Población == "Personas",
+         `Situación profesional` == "Ocupado/a",
+         `Tipo de dato` == "Datos ajustados de estacionalidad y calendario",
+         `Ramas de actividad` != "Total",
+         `Ramas de actividad` != "Total Nacional")
+
+
+ggplot(datos_filtrados, aes(x = "", y = Total, fill = `Ramas de actividad`)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(option = "viridis") + 
+  theme_void() +
+  labs(title = "Distribución por Ramas de Actividad (2024T4)",
+       fill = "Rama")
+```
+---
+
+<br>
+
+## Coclusiones
+
+La economía española en 2026 se define por una notable resiliencia, consolidando un crecimiento del PIB apoyado en la fortaleza del sector servicios y una recuperación del valor añadido bruto tras periodos de incertidumbre. Este dinamismo ha permitido alcanzar cifras récord de ocupación, superando los 21,5 millones de trabajadores y reduciendo la tasa de paro a niveles mínimos en casi dos décadas. Sin embargo, esta bonanza convive con una estabilización del IPC que, aunque moderada en comparación con años previos, sigue condicionando el poder adquisitivo real frente a la evolución de los salarios.
+
+A pesar de los indicadores positivos, el modelo enfrenta desafíos estructurales profundos, principalmente derivados de una pirámide poblacional envejecida que compromete el relevo generacional y la sostenibilidad futura. La concentración de la población y la riqueza en Madrid y el arco mediterráneo agudiza los desequilibrios territoriales, mientras que la baja natalidad obliga a la economía a depender del saldo migratorio para mantener su capacidad productiva. En conclusión, el éxito a largo plazo dependerá de transformar este crecimiento en una mejora de la productividad dentro de las ramas de actividad más potentes para compensar el déficit demográfico.
+
+
+
+
