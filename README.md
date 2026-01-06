@@ -10,9 +10,9 @@ La página web de la asignatura puede verse aquí: <https://perezp44.github.io/i
 
 
 <!-- En la linea de abajo HAS de SUSTITUIR 
-"perezp44" por tu usuario de Github-->
+"jcperez21" por tu usuario de Github-->
 La versión final del trabajo puede visualizarse 
-en: <https://perezp44.github.io/trabajo_BigData_individual/>. 
+en: <https://jcperez21.github.io/trabajo_BigData_individual/>. 
 
 
 <!-- Abajo podéis escribir lo que queráis, igual un resumen del trabajo, o ..., o ...
@@ -20,6 +20,6 @@ pero al menos, tenéis que poner el título del trabajo y tu nombre -->
 
 El autor del trabajo soy yo,  Manuel Andorra Grande (macogaaaaxxx@alumni.uv.es), .....
 
-El título del trabajo es .....  En el trabajo se hace  .... blah-blah ...
+El título del trabajo es Juan Carlos Pérez Hernando.  En el trabajo se pretende aprender a utilizar algundas funciones de Rstudio a partir de datos del INE sobre España.
 
 
