@@ -20,6 +20,6 @@ pero al menos, tenéis que poner el título del trabajo y tu nombre -->
 
 El autor del trabajo soy yo,  Juan Carlos Pérez Hernando (peher7@alumni.uv.es), .....
 
-El título del trabajo es Juan Carlos Pérez Hernando.  En el trabajo se pretende aprender a utilizar algundas funciones de Rstudio a partir de datos del INE sobre España.
+El título del trabajo es Algunos datos sobre España.  En el trabajo se pretende aprender a utilizar algundas funciones de Rstudio a partir de datos del INE sobre España.
 
 
